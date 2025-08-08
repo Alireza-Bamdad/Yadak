@@ -1,20 +1,25 @@
-import { Sequelize } from 'sequelize';
-import { Op } from 'sequelize';
 import OtpCode from '../models/OtpCode.js';  
-
-export const generateOTP = async (userId, type, method) => {
+import { Op } from 'sequelize';
+export const generateOTP = async (phone, type, method) => {
   const otp = (Math.floor(100000 + Math.random() * 900000)).toString();  
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);  //5min
+  const expiresAt = new Date(Date.now() + (2 * 60 * 1000)); 
 
+ 
+  await OtpCode.destroy({
+    where: {
+      expires_at: { [Op.lt]: new Date() }  
+    }
+  });
 
+  
   await OtpCode.create({
-    user_id: userId,
+    phone: phone,
     code: otp,
-    type,
-    method,
+    type: type,
+    method: method,
     expires_at: expiresAt,
     used: false,
   });
 
-  return otp;
+  return otp; 
 };

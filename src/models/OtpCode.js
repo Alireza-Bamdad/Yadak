@@ -1,9 +1,9 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.js';
+import sequelize from '../config/database.cjs';  
 
 const OtpCode = sequelize.define('OtpCode', {
-  user_id: {
-    type: DataTypes.INTEGER,
+  phone : {
+    type: DataTypes.STRING,
     allowNull: false,
   },
   code: {
@@ -27,7 +27,7 @@ const OtpCode = sequelize.define('OtpCode', {
     defaultValue: false,
   },
 }, {
-  timestamps: true, 
+  timestamps: true,     
   underscored: true,  
 });
 
