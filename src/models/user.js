@@ -26,6 +26,10 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  role : {
+    type :DataTypes.STRING,
+    defaultValue : 'user',
+  },
 }, {
  
   underscored: true,

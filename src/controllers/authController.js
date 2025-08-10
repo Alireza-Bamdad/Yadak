@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import User from '../models/user.js';
+import User from '../models/User.js';
 import { sendSms } from '../utils/sms.js'; 
 import { generateOTP } from '../utils/otpservice.js' 
 import OtpCode from '../models/OtpCode.js'; 
@@ -156,7 +156,7 @@ export const updatePassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     
-    user.passwordHash = hashedPassword;
+    user.password_hash = hashedPassword;
     await user.save();
 
     res.status(200).json({ message: 'Password updated successfully' });
