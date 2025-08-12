@@ -1,5 +1,8 @@
+//src/models/OtpCode
+
+
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.cjs';  
+import sequelize from '../config/database.js';  
 
 const OtpCode = sequelize.define('OtpCode', {
   phone : {
@@ -32,3 +35,5 @@ const OtpCode = sequelize.define('OtpCode', {
 });
 
 export default OtpCode;
+
+

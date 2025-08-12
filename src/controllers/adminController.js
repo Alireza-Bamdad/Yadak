@@ -1,4 +1,7 @@
+//src/controllers/adminControllers.js
+
 import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 export const createUser = async (req, res) => {
   const { firstName, lastName, phone, email, password, role } = req.body;
@@ -17,20 +20,23 @@ export const createUser = async (req, res) => {
 
     res.status(201).json({ message: 'User created successfully', userId: newUser.id });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+      console.error(error);
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).json({ message: 'Phone or email already exists' });
+      }
+      res.status(500).json({ message: 'Server error' });
   }
 };
 
 export const updateUser = async (req, res) => {
-  const { userId, firstName, lastName, phone, email, role } = req.body;
+  const { id } = req.params;
+  const {  firstName, lastName, phone, email, role } = req.body;
 
   try {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(id);
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
 
     user.first_name = firstName || user.first_name;
     user.last_name = lastName || user.last_name;
@@ -48,14 +54,13 @@ export const updateUser = async (req, res) => {
 };
 
 export const deleteUser = async (req, res) => {
-  const { userId } = req.params;
+  const { id } = req.params;
 
   try {
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(id);
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
+  
 
     await user.destroy();
 

@@ -1,6 +1,7 @@
+//src/models/Product
 
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.cjs';
+import sequelize from '../config/database.js';
 import Category from './Category.js'; 
 
 const Product = sequelize.define('Product', {
@@ -28,6 +29,10 @@ const Product = sequelize.define('Product', {
     },
     allowNull: false,
   },
+    image_url: {
+    type: DataTypes.STRING,  
+    allowNull: true,
+  },
 }, {
   underscored: true,
   timestamps: true,
@@ -38,3 +43,5 @@ Product.belongsTo(Category, { foreignKey: 'category_id' });
 Category.hasMany(Product, { foreignKey: 'category_id' });
 
 export default Product;
+
+

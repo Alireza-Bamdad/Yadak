@@ -1,3 +1,4 @@
+//src/controllers/categoryControllers.js
 
 import Category from '../models/Category.js';
 

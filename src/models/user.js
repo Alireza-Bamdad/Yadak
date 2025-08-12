@@ -1,10 +1,11 @@
+//src/models/User
+
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.cjs';
+import sequelize from '../config/database.js';
 
 const User = sequelize.define('User', {
   first_name: {
     type: DataTypes.STRING,
-    allowNull: false,
   },
   last_name: {
     type: DataTypes.STRING,

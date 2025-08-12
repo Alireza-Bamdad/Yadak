@@ -1,6 +1,5 @@
-
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.cjs';
+import sequelize from '../config/database.js';
 
 const Category = sequelize.define('Category', {
   name: {
@@ -18,3 +17,5 @@ const Category = sequelize.define('Category', {
 });
 
 export default Category;
+
+

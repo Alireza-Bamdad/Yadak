@@ -1,38 +1,163 @@
+//src/controllers/authControllers.js
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
-import { sendSms } from '../utils/sms.js'; 
+import { sendOtpSms } from '../utils/sms.js'; 
 import { generateOTP } from '../utils/otpservice.js' 
 import OtpCode from '../models/OtpCode.js'; 
 import { Op } from 'sequelize';
 
+const JWT_SECRET = process.env.JWT_SECRET;
 
 
-
-
-
-export const register = async (req, res) => {
-  const { first_name, last_name, phone, email, password, confirm_password } = req.body;
-
-  if (password !== confirm_password) {
-    return res.status(400).json({ message: 'Passwords do not match' });
-  }
-
+export const registerOtpBegin = async (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ message: 'phone is required' });
 
-    const newUser = await User.create({
-      first_name,
-      last_name,
-      phone,
-      email,
-      password_hash: hashedPassword,  
-    });
-        res.status(201).json({ message: 'Registration successful. Pleas verfiy yor email and phone number', userId: newUser.id });
-    }catch(error){
-        res.json({message : "Invalid data"})
+    const exists = await User.findOne({ where: { phone } });
+    if (exists) {
+      return res.json({ exists: true, message: 'User exists. Go to login' });
     }
+
+    const otp = await generateOTP(phone, 'signup', 'sms');
+    await sendOtpSms(phone, otp, 2);
+    return res.json({ needsVerify: true, message: 'OTP sent' });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'Server error' });
+  }
 };
+
+export const registerOtpCheck = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ message: 'phone and otp are required' });
+    }
+
+
+    const exists = await User.findOne({ where: { phone } });
+    if (exists) {
+      return res.status(409).json({ message: 'User already exists. Go to login' });
+    }
+
+    const otpRecord = await OtpCode.findOne({
+      where: {
+        phone,
+        code: otp,
+        used: false,
+        expires_at: { [Op.gt]: new Date() },
+      },
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+
+    otpRecord.used = true;
+    await otpRecord.save();
+
+    const signupToken = jwt.sign(
+      { phone, onboarding: true },
+      JWT_SECRET,
+      { expiresIn: '15m' } 
+    );
+
+    return res.json({ signupToken, message: 'OTP verified' });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+export const registerOtpComplete = async (req, res) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    if (!token) return res.status(401).json({ message: 'No signup token' });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: 'Signup token invalid/expired' });
+    }
+
+    if (!decoded.onboarding || !decoded.phone) {
+      return res.status(403).json({ message: 'Invalid onboarding token' });
+    }
+
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ message: 'password is required' });
+
+    
+    const exists = await User.findOne({ where: { phone: decoded.phone } });
+    if (exists) {
+      return res.status(409).json({ message: 'User already exists. Go to login' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      phone: decoded.phone,
+      password_hash,
+      is_verified: true,
+      role: 'user',
+     
+    });
+
+    const loginToken = jwt.sign(
+      { id: user.id, role: user.role, phone: user.phone },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    return res.status(201).json({ message: 'Signup completed', token: loginToken });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+export const verifyPhone = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ message: 'phone and otp are required' });
+    }
+
+    const user = await User.findOne({ where: { phone } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const record = await OtpCode.findOne({
+      where: {
+        phone,
+        code: otp,
+        used: false,
+        expires_at: { [Op.gt]: new Date() },
+      },
+    });
+    if (!record) return res.status(400).json({ message: 'Invalid or expired OTP' });
+
+    record.used = true;
+    await record.save();
+
+    user.is_verified = true;
+    await user.save();
+
+    const token = jwt.sign({ id: user.id, role: user.role, phone: user.phone }, JWT_SECRET, { expiresIn: '30d' });
+
+    return res.json({ message: 'Phone verified', token });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 
 export const login = async (req, res) => {
   const { phoneOrEmail, password } = req.body;  
@@ -57,7 +182,7 @@ export const login = async (req, res) => {
     }
 
     
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, role: user.role ,phone: user.phone }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     res.json({ message: 'Login successful', token });
 
@@ -77,10 +202,10 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+
     const otp = await generateOTP(phone, 'reset', 'sms');
-    
+    await sendOtpSms(user.phone, otp, 2);
    
-    sendSms(user.phone, `Your OTP for password reset is: ${otp}`);
 
     res.json({ message: 'OTP sent successfully' });
 
@@ -165,3 +290,5 @@ export const updatePassword = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
