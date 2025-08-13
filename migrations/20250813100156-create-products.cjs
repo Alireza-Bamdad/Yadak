@@ -1,34 +1,34 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('otp_codes', {  
+    await queryInterface.createTable('products', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
       },
-      user_id: {
+      name: {
+        type: Sequelize.STRING,
+        unique: true,
+      },
+      description: {
+        type: Sequelize.STRING,
+      },
+      price: {
+        type: Sequelize.FLOAT,
+      },
+      stock: {
         type: Sequelize.INTEGER,
+      },
+      category_id: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'categories', 
+          key: 'id',
+        },
         allowNull: false,
       },
-      code: {
+      image_url: {
         type: Sequelize.STRING,
-        allowNull: false,
-      },
-      type: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      method: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      expires_at: {
-        type: Sequelize.DATE,
-        allowNull: false,
-      },
-      used: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -40,8 +40,7 @@ module.exports = {
       },
     });
   },
-
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('otp_codes');
-  }
+    await queryInterface.dropTable('products');
+  },
 };

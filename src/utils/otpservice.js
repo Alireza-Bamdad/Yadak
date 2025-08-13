@@ -1,4 +1,4 @@
-
+//utils/otpservice.js
 import OtpCode from '../models/OtpCode.js';  
 import { Op } from 'sequelize';
 

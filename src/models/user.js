@@ -30,11 +30,15 @@ const User = sequelize.define('User', {
   role : {
     type :DataTypes.STRING,
     defaultValue : 'user',
-  },
+  },is_active: {
+  type: DataTypes.BOOLEAN,
+  defaultValue: true,
+},
 }, {
- 
+ tableName: 'users',
   underscored: true,
   timestamps: true,
 });
 
 export default User;
+

@@ -1,13 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import sequelize from './config/database.js';
 
 import authRoutes from './routes/authRoutes.js';
-import sequelize from './config/database.js';
-import adminRoutes from './routes/adminRoutes.js';
-import productRoutes from './routes/productRoutes.js'
- 
-
+import adminUserRoutes from './routes/admin/userRoutes.js';
+import adminCategoryRoutes from './routes/admin/categoryRoutes.js';
+import adminProductRoutes from './routes/admin/productRoutes.js';
+import userAddressRoutes from './routes/User/addressRoutes.js';
+import publicProductsRoutes from './routes/productRoutes.js'
 dotenv.config();
 
 const app = express();
@@ -16,12 +17,18 @@ app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173'] }));
 
 
 app.use(express.json());
+ 
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/products', adminProductRoutes);
 
-
+app.use('/api/user/addresses', userAddressRoutes)
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', productRoutes);
 
+
+//get products
+
+app.use('/api',publicProductsRoutes)
 
 sequelize.authenticate()
   .then(() => {

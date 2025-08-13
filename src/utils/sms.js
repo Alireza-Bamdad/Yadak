@@ -28,3 +28,4 @@ export const sendSms = (to, text) => sms.send(to98(to), SENDER, text);
 
 export const sendOtpSms = (to, code, minutes = 2) =>
   sendSms(to, `کد تایید شما: ${code}\nاعتبار تا ${minutes} دقیقه`);
+
